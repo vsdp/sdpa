@@ -87,8 +87,8 @@ OPTION0.resultFile   = '';
 try 
     OPTION0.NumThreads   = maxNumCompThreads; % Max Avialable Number
 catch
-    fprintf(['Function maxNumCompThreads is not found, NumThreads ' ...
-             'is set as 1.\n']);
+    %fprintf(['Function maxNumCompThreads is not found, NumThreads ' ...
+    %         'is set as 1.\n']);
     OPTION0.NumThreads   = 1;
 end
 
