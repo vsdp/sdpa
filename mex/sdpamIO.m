@@ -10,23 +10,23 @@ function [objVal,x0,X0,Y0,INFO] = sdpamIO(mDIM,nBLOCK,bLOCKsTRUCT,ct,F,~,~,~,OPT
 input_file  = [tempname(), '.dat-s'];
 result_file = [tempname(), '.result'];
 option_file = [tempname(), '.result'];
-gensdpafile(input_file,mDIM,nBLOCK,bLOCKsTRUCT,ct,F);
-create_sdpam_options_file(option_file, OPTIONS);
+gensdpafile (input_file, mDIM, nBLOCK, bLOCKsTRUCT, ct, F);
+create_sdpam_options_file (option_file, OPTIONS);
 redirect_str = '';
 if (isstruct (OPTIONS) && isfield (OPTIONS, 'print'))
-  if (strcmpi(OPTIONS.print,'no'))
+  if (strcmpi (OPTIONS.print, 'no'))
     redirect_str = '>/dev/null';
-  elseif (~strcmpi(OPTIONS.print,'display'))
+  elseif (~strcmpi (OPTIONS.print, 'display'))
     redirect_str = ['>', OPTIONS.print];
   end
 end
 % call csdp solver
-system(sprintf('sdpa -ds %s -o %s -p %s %s', input_file, result_file, ...
+system (sprintf ('sdpa -ds %s -o %s -p %s %s', input_file, result_file, ...
   option_file, redirect_str));
-[x0,X0,Y0] = read_sdpam_result(result_file,mDIM,nBLOCK,bLOCKsTRUCT);
-delete(input_file);
-delete(result_file);
-delete(option_file);
+[x0,X0,Y0] = read_sdpam_result (result_file, mDIM, nBLOCK, bLOCKsTRUCT);
+delete (input_file);
+delete (result_file);
+delete (option_file);
 % If everythink went well up to here, return success.
 objVal = [];
 INFO.phasevalue = 'pdOPT';
@@ -98,7 +98,7 @@ end
 
 
 
-function [x0,X0,Y0] = read_sdpam_result(filename,mDIM,nBLOCK,bLOCKsTRUCT)
+function [x0,X0,Y0] = read_sdpam_result (filename, mDIM, nBLOCK, bLOCKsTRUCT)
 % READ_SDPAM_RESULT  Reads a computed result file from the SDPA solver
 %
 %   [x0,X0,Y0] = READ_SDPAM_RESULT(filename,mDIM,nBLOCK,bLOCKsTRUCT)
@@ -106,31 +106,31 @@ function [x0,X0,Y0] = read_sdpam_result(filename,mDIM,nBLOCK,bLOCKsTRUCT)
 %   The format is explained in Section 8 in the file:
 %   https://sourceforge.net/projects/sdpa/files/sdpa-m/sdpamManual.pdf
 
-text = fileread(filename);
-xVecIdx = strfind(text,'xVec');
-xMatIdx = strfind(text,'xMat');
-yMatIdx = strfind(text,'yMat');
-endIdx  = strfind(text,'main loop time');
+text = fileread (filename);
+xVecIdx = strfind (text, 'xVec');
+xMatIdx = strfind (text, 'xMat');
+yMatIdx = strfind (text, 'yMat');
+endIdx  = strfind (text, 'main loop time');
 
 xVecStr = text(xVecIdx(end):xMatIdx(end));
-idx1 = strfind(xVecStr,'{');
-idx2 = strfind(xVecStr,'}');
-xVecStr = xVecStr(idx1(1) + 1: idx2(end) - 1);
+idx1 = strfind (xVecStr, '{');
+idx2 = strfind (xVecStr, '}');
+xVecStr = xVecStr((idx1(1) + 1):(idx2(end) - 1));
 x0 = read_vector_from_string(xVecStr,mDIM);
 
-xMatStr = text(xMatIdx(end):yMatIdx(end));
-yMatStr = text(yMatIdx(end):endIdx(end));
-X0 = read_cell_matrix_from_string(xMatStr,nBLOCK,bLOCKsTRUCT);
-Y0 = read_cell_matrix_from_string(yMatStr,nBLOCK,bLOCKsTRUCT);
+xMatStr = text (xMatIdx(end):yMatIdx(end));
+yMatStr = text (yMatIdx(end):endIdx(end));
+X0 = read_cell_matrix_from_string (xMatStr, nBLOCK, bLOCKsTRUCT);
+Y0 = read_cell_matrix_from_string (yMatStr, nBLOCK, bLOCKsTRUCT);
 end
 
-function C = read_cell_matrix_from_string(str,nBLOCK,bLOCKsTRUCT)
+function C = read_cell_matrix_from_string (str, nBLOCK, bLOCKsTRUCT)
 C = cell(nBLOCK,1);
-idx1 = strfind(str,'{');
-idx2 = strfind(str,'}');
+idx1 = strfind (str, '{');
+idx2 = strfind (str, '}');
 str = str(idx1(1) + 1: idx2(end) - 1);
 for i = 1:nBLOCK
-  idx1 = strfind(str,'{');
+  idx1 = strfind (str, '{');
   idx1 = idx1(1) + 1;
   idx2 = idx1 + 1;
   j = 1;
@@ -144,27 +144,27 @@ for i = 1:nBLOCK
     idx2 = idx2 + 1;
   end
   if (bLOCKsTRUCT(i) > 0)
-    C{i} = read_matrix_from_string(str(idx1:idx2-2),bLOCKsTRUCT(i));
+    C{i} = read_matrix_from_string(str(idx1:idx2 - 2),bLOCKsTRUCT(i));
   else
-    C{i} = read_vector_from_string(str(idx1:idx2-2),-bLOCKsTRUCT(i));
+    C{i} = read_vector_from_string(str(idx1:idx2 - 2),-bLOCKsTRUCT(i));
   end
   str = str(idx2:end);
 end
-assert(length(C),nBLOCK)
+assert(length(C) == nBLOCK)
 end
 
-function C = read_matrix_from_string(str,dim)
+function C = read_matrix_from_string (str, dim)
 C = zeros(dim);
-idx1 = strfind(str,'{');
-idx2 = strfind(str,'}');
-assert(length(idx1),dim)
-assert(length(idx1),length(idx2))
+idx1 = strfind (str, '{');
+idx2 = strfind (str, '}');
+assert (length(idx1) == dim)
+assert (length(idx1) == length(idx2))
 for i = 1:dim
-  C(i,:) = read_vector_from_string(str(idx1(i) + 1: idx2(i) - 1),dim);
+  C(i,:) = read_vector_from_string (str((idx1(i) + 1):(idx2(i) - 1)), dim);
 end
 end
 
-function c = read_vector_from_string(str,len)
-c = sscanf(str, '%f,');
-assert(length(c),len);
+function c = read_vector_from_string (str, len)
+c = sscanf (str, '%f,');
+assert (length (c) == len);
 end
