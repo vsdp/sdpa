@@ -1,9 +1,9 @@
 function gensdpafile(filename,mDIM,nBLOCK,bLOCKsTRUCT,c,F)
-% 
+%
 % Generate SDP data file with SDPA Sparse format
-% 
+%
 % gensdpafile(filename,mDIM,nBLOCK,bLOCKsTRUCT,c,F)
-% 
+%
 % <INPUT>
 % - filename   : string    ; generated filename
 % - mDIM       : integer   ; number of decision variables
@@ -11,11 +11,11 @@ function gensdpafile(filename,mDIM,nBLOCK,bLOCKsTRUCT,c,F)
 % - bLOCKsTRUCT: vector    ; represetns the block structure of F
 % - c          : vector    ; coefficient vector
 % - F          : cell array; coefficient matrices
-% 
+%
 
 % This file is a component of SDPA
 % Copyright (C) 2004-2012 SDPA Project
-% 
+%
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 2 of the License, or
@@ -25,7 +25,7 @@ function gensdpafile(filename,mDIM,nBLOCK,bLOCKsTRUCT,c,F)
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
@@ -43,7 +43,7 @@ end
 % open file
 fid=fopen(filename, 'w');
 if fid == -1
-  error(sprintf('Failed to open %s.', filename));
+  error('Failed to open %s.', filename);
 end
 
 % comment
@@ -80,43 +80,39 @@ for k=1:mDIM+1
   for l=1:nBLOCK
     dim=abs(bLOCKsTRUCT(l));
     tmpF=F{l,k};
-    if isempty(tmpF) 
-      continue; 
+    if isempty(tmpF)
+      continue;
     end
     [m,n]=size(tmpF);
-    if m == dim & n == dim & bLOCKsTRUCT(l) > 0
+    if m == dim && n == dim && bLOCKsTRUCT(l) > 0
       % normal block
       for i=1:dim
-	for j=1:dim
-	  if (i <= j & tmpF(i,j) ~= 0)
-	    % upper triangle part only
-	    fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,j,tmpF(i,j));
-	  end
-	end
+        for j=1:dim
+          if (i <= j && tmpF(i,j) ~= 0)
+            % upper triangle part only
+            fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,j,full(tmpF(i,j)));
+          end
+        end
       end
-    elseif ( m==1 | n==1 ) & m*n==dim & bLOCKsTRUCT(l) < 0
+    elseif ( m==1 || n==1 ) && m*n==dim && bLOCKsTRUCT(l) < 0
       % diagonal block with vector
       for i=1:dim
-	if tmpF(i) ~= 0
-	  fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,i,tmpF(i));
-	end
+        if tmpF(i) ~= 0
+          fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,i,full(tmpF(i)));
+        end
       end
-    elseif m == dim & n == dim & bLOCKsTRUCT(l) < 0
+    elseif m == dim && n == dim && bLOCKsTRUCT(l) < 0
       % diagonal block with matrix
       for i=1:dim
-	if tmpF(i,i) ~= 0
-	  fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,i,tmpF(i,i));
-	end
+        if tmpF(i,i) ~= 0
+          fprintf(fid, '%d,%d,%d,%d,%g\n',k-1,l,i,i,full(tmpF(i,i)));
+        end
       end
     else
-      error(sprintf('Inconsistent data at F{%d,%d}',l,k));
-      fclose(fid);
-      return;
+      fclose (fid);
+      error ('Inconsistent data at F{%d,%d}', l, k);
     end
   end
 end
 
-% close file
 fclose(fid);
-
-% End of File
