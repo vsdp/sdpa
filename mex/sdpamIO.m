@@ -12,6 +12,9 @@ result_file = [tempname(), '.result'];
 option_file = [tempname(), '.result'];
 % gensdpafile (input_file, mDIM, nBLOCK, bLOCKsTRUCT, ct, F);  % Too slow
 writesdpa (input_file, A, b, c, K);  % From CSDP
+% 'writesdpa' puts the linear cones to the back.
+idx = (bLOCKsTRUCT < 0);  % Indices of linear cones.
+bLOCKsTRUCT = [bLOCKsTRUCT(~idx), bLOCKsTRUCT(idx)];
 create_sdpam_options_file (option_file, OPTIONS);
 redirect_str = '';
 if (isstruct (OPTIONS) && isfield (OPTIONS, 'print'))
