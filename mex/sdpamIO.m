@@ -1,7 +1,7 @@
-function [objVal,x0,X0,Y0,INFO] = sdpamIO(mDIM,nBLOCK,bLOCKsTRUCT,ct,F,~,~,~,OPTIONS)
+function [objVal,x0,X0,Y0,INFO] = sdpamIO(mDIM,nBLOCK,bLOCKsTRUCT,A,b,c,K,~,OPTIONS)
 % SDPAMIO  Call the SDPA solver without MEX interface using file I/O.
 %
-%   [objVal,x0,X0,Y0,INFO] = SDPAMIO(mDIM,nBLOCK,bLOCKsTRUCT,ct,F,x0,X0,Y0,OPTIONS)
+%   [objVal,x0,X0,Y0,INFO] = SDPAMIO(mDIM,nBLOCK,bLOCKsTRUCT,A,b,c,K,~,OPTIONS)
 %
 %   See also sdpam.
 
@@ -10,7 +10,8 @@ function [objVal,x0,X0,Y0,INFO] = sdpamIO(mDIM,nBLOCK,bLOCKsTRUCT,ct,F,~,~,~,OPT
 input_file  = [tempname(), '.dat-s'];
 result_file = [tempname(), '.result'];
 option_file = [tempname(), '.result'];
-gensdpafile (input_file, mDIM, nBLOCK, bLOCKsTRUCT, ct, F);
+% gensdpafile (input_file, mDIM, nBLOCK, bLOCKsTRUCT, ct, F);  % Too slow
+writesdpa (input_file, A, b, c, K);  % From CSDP
 create_sdpam_options_file (option_file, OPTIONS);
 redirect_str = '';
 if (isstruct (OPTIONS) && isfield (OPTIONS, 'print'))
@@ -97,7 +98,6 @@ fclose(f);
 end
 
 
-
 function [x0,X0,Y0] = read_sdpam_result (filename, mDIM, nBLOCK, bLOCKsTRUCT)
 % READ_SDPAM_RESULT  Reads a computed result file from the SDPA solver
 %
@@ -106,23 +106,24 @@ function [x0,X0,Y0] = read_sdpam_result (filename, mDIM, nBLOCK, bLOCKsTRUCT)
 %   The format is explained in Section 8 in the file:
 %   https://sourceforge.net/projects/sdpa/files/sdpa-m/sdpamManual.pdf
 
-text = fileread (filename);
-xVecIdx = strfind (text, 'xVec');
-xMatIdx = strfind (text, 'xMat');
-yMatIdx = strfind (text, 'yMat');
-endIdx  = strfind (text, 'main loop time');
+str = fileread (filename);
+xVecIdx = strfind (str, 'xVec');
+xMatIdx = strfind (str, 'xMat');
+yMatIdx = strfind (str, 'yMat');
+endIdx  = strfind (str, 'main loop time');
 
-xVecStr = text(xVecIdx(end):xMatIdx(end));
+xVecStr = str(xVecIdx(end):xMatIdx(end));
 idx1 = strfind (xVecStr, '{');
 idx2 = strfind (xVecStr, '}');
 xVecStr = xVecStr((idx1(1) + 1):(idx2(end) - 1));
 x0 = read_vector_from_string(xVecStr,mDIM);
 
-xMatStr = text (xMatIdx(end):yMatIdx(end));
-yMatStr = text (yMatIdx(end):endIdx(end));
+xMatStr = str(xMatIdx(end):yMatIdx(end));
+yMatStr = str(yMatIdx(end):endIdx(end));
 X0 = read_cell_matrix_from_string (xMatStr, nBLOCK, bLOCKsTRUCT);
 Y0 = read_cell_matrix_from_string (yMatStr, nBLOCK, bLOCKsTRUCT);
 end
+
 
 function C = read_cell_matrix_from_string (str, nBLOCK, bLOCKsTRUCT)
 C = cell(nBLOCK,1);
@@ -152,6 +153,7 @@ for i = 1:nBLOCK
 end
 assert(length(C) == nBLOCK)
 end
+
 
 function C = read_matrix_from_string (str, dim)
 C = zeros(dim);
