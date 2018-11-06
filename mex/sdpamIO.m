@@ -31,6 +31,10 @@ system (sprintf ('sdpa -ds %s -o %s -p %s %s', input_file, result_file, ...
 delete (input_file);
 delete (result_file);
 delete (option_file);
+% Revert order of 'writesdpa'.
+idx = (bLOCKsTRUCT < 0);  % Indices of linear cones.
+X0 = [X0(idx(:)); X0(~idx(:))];
+Y0 = [Y0(idx(:)); Y0(~idx(:))];
 % If everythink went well up to here, return success.
 objVal = [];
 INFO.phasevalue = 'pdOPT';
